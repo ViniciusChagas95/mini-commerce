@@ -1,0 +1,35 @@
+# Frontend
+mini-commerce-web/node_modules/
+mini-commerce-web/.next/
+mini-commerce-web/out/
+mini-commerce-web/build/
+mini-commerce-web/.next-dev.*.log
+mini-commerce-web/npm-debug.log*
+mini-commerce-web/yarn-debug.log*
+mini-commerce-web/yarn-error.log*
+mini-commerce-web/.pnpm-debug.log*
+mini-commerce-web/.env*
+mini-commerce-web/.vercel/
+mini-commerce-web/*.tsbuildinfo
+
+# Backend
+MiniCommerce.Api/bin/
+MiniCommerce.Api/obj/
+MiniCommerce.Api/*.db
+MiniCommerce.Api/*.db-shm
+MiniCommerce.Api/*.db-wal
+MiniCommerce.Api/appsettings.Development.json
+
+# Local/editor
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+AGENTS.md
+CLAUDE.md
+**/AGENTS.md
+**/CLAUDE.md
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
