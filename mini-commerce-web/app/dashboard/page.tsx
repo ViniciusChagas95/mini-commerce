@@ -112,7 +112,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                 <Link href="/products" className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-lg transition hover:bg-slate-800">
                   <p className="font-semibold text-white">Produtos</p>
                   <p className="mt-3 text-sm text-slate-400">Gerencie o catálogo e os detalhes de cada item.</p>
@@ -120,6 +120,10 @@ export default function DashboardPage() {
                 <Link href="/orders" className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-lg transition hover:bg-slate-800">
                   <p className="font-semibold text-white">Pedidos</p>
                   <p className="mt-3 text-sm text-slate-400">Veja e atualize o status dos pedidos feitos.</p>
+                </Link>
+                <Link href="/categories" className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-lg transition hover:bg-slate-800">
+                  <p className="font-semibold text-white">Categorias</p>
+                  <p className="mt-3 text-sm text-slate-400">Gerencie as categorias usadas nos produtos.</p>
                 </Link>
                 <Link href="/products/new" className="rounded-3xl border border-white/10 bg-cyan-500/10 p-8 shadow-lg transition hover:bg-cyan-500/15">
                   <p className="font-semibold text-cyan-200">Criar produto</p>

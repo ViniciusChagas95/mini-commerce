@@ -59,6 +59,39 @@ export default function CategoriesPage() {
     void fetchInitialCategories();
   }, [loadCategories, router]);
 
+  async function handleDelete(categoryId: number) {
+  const confirmed = confirm("Tem certeza que deseja excluir esta categoria?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await api.delete(`/Categories/${categoryId}`);
+
+    alert("Categoria excluída com sucesso!");
+    await loadCategories();
+  } catch (error: unknown) {
+    console.error(error);
+
+    let message = "Erro ao excluir categoria.";
+
+    if (axios.isAxiosError(error)) {
+      if (typeof error.response?.data === "string") {
+        message = error.response.data;
+      }
+
+      if (error.response?.status === 401) {
+        message = "Sessão expirada. Faça login novamente.";
+        localStorage.removeItem("token");
+        router.push("/login");
+      }
+    }
+
+    alert(message);
+  }
+}
+
   return (
     <>
       <Navbar />
@@ -153,6 +186,20 @@ export default function CategoriesPage() {
                   <p className="mt-6 text-sm leading-6 text-slate-400">
                     Essa categoria aparecerá no catálogo de produtos e ajuda a organizar sua loja.
                   </p>
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => router.push(`/categories/${category.id}/edit`)}
+                      className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category.id)}
+                      className="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
+                    >
+                      Excluir
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -28,6 +28,7 @@ public class AuthController : ControllerBase
     {
         var userExists = await _context.Users
             .AnyAsync(u => u.Email == dto.Email);
+        
 
         if (userExists)
             return BadRequest("Email já cadastrado.");
@@ -36,7 +37,8 @@ public class AuthController : ControllerBase
         {
             Name = dto.Name,
             Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+            Role = dto.Role
         };
 
         _context.Users.Add(user);
@@ -72,7 +74,8 @@ public class AuthController : ControllerBase
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var creds = new SigningCredentials(

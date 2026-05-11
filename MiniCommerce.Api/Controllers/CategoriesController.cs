@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniCommerce.Api.Data;
 using MiniCommerce.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiniCommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CategoriesController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -16,7 +18,9 @@ public class CategoriesController : ControllerBase
         _context = context;
     }
 
+
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<Category>>> GetAll()
     {
         return await _context.Categories
@@ -25,6 +29,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<Category>> GetById(int id)
     {
         var category = await _context.Categories
@@ -38,6 +43,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Category>> Create(Category category)
     {
         if (string.IsNullOrWhiteSpace(category.Name))
@@ -50,6 +56,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, Category category)
     {
         var categoryExists = await _context.Categories.AnyAsync(c => c.Id == id);
@@ -66,12 +73,19 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var category = await _context.Categories.FindAsync(id);
 
         if (category is null)
             return NotFound("Categoria não encontrada.");
+
+        var hasProducts = await _context.Products
+            .AnyAsync(p => p.CategoryId == id);
+
+        if (hasProducts)
+            return BadRequest("Não é possível excluir uma categoria que possui produtos vinculados.");
 
         _context.Categories.Remove(category);
         await _context.SaveChangesAsync();

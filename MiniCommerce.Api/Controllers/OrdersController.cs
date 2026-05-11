@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using MiniCommerce.Api.Data;
 using MiniCommerce.Api.DTOs;
 using MiniCommerce.Api.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiniCommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
+
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;

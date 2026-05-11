@@ -9,7 +9,6 @@ namespace MiniCommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[AllowAnonymous]
 
 public class ProductsController : ControllerBase
 {
@@ -19,8 +18,9 @@ public class ProductsController : ControllerBase
     {
         _context = context;
     }
-
+    
     [HttpGet]
+    [Authorize]
     public async Task<ActionResult<List<ProductResponseDto>>> GetAll()
     {
         var products = await _context.Products
@@ -31,7 +31,8 @@ public class ProductsController : ControllerBase
 
         return products.Select(ToResponseDto).ToList();
     }
-
+    
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<Product>> Create(CreateProductDto dto)
     {
@@ -82,6 +83,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<ProductResponseDto>> GetById(int id)
     {
         var product = await _context.Products
@@ -96,6 +98,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, CreateProductDto dto)
     {
         var product = await _context.Products.FindAsync(id);
@@ -127,6 +130,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var product = await _context.Products.FindAsync(id);
