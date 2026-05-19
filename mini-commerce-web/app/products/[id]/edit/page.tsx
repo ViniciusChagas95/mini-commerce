@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
+import { useAdmin } from "@/lib/useAdmin";
 
 type Category = {
   id: number;
@@ -14,6 +15,7 @@ type Category = {
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
+  const admin = useAdmin();
 
   const productId = Number(params.id);
 
@@ -33,6 +35,10 @@ export default function EditProductPage() {
 
     if (!token) {
       router.push("/login");
+      return;
+    }
+
+    if (!admin) {
       return;
     }
 
@@ -74,7 +80,7 @@ export default function EditProductPage() {
     }
 
     void fetchData();
-  }, [productId, router]);
+  }, [admin, productId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,6 +120,27 @@ export default function EditProductPage() {
       <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
         <div className="mx-auto max-w-3xl space-y-8">
           <section className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-[0_30px_90px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            {!admin ? (
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-red-300/80">
+                  Acesso restrito
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold text-white">
+                  Você não pode editar produtos
+                </h1>
+                <p className="mt-2 text-slate-400">
+                  Apenas administradores podem alterar produtos. Entre com uma conta de administrador para acessar esta função.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/products")}
+                  className="mt-6 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                >
+                  Voltar para produtos
+                </button>
+              </div>
+            ) : (
+              <>
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
               <div>
                 <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/75">Produtos</p>
@@ -205,6 +232,8 @@ export default function EditProductPage() {
                     Salvar alterações
                   </button>
                 </form>
+              </>
+            )}
               </>
             )}
           </section>

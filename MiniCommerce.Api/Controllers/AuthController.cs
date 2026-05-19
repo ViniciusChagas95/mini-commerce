@@ -7,6 +7,8 @@ using MiniCommerce.Api.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace MiniCommerce.Api.Controllers;
 
@@ -64,6 +66,30 @@ public class AuthController : ControllerBase
         var token = GenerateToken(user);
 
         return Ok(new { token });
+    }
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<ActionResult<UserResponseDto>> Me()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userId is null)
+            return Unauthorized("Usuário não autenticado.");
+
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+
+        if (user is null)
+            return NotFound("Usuário não encontrado.");
+
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Role = user.Role
+        };
     }
 
     private string GenerateToken(User user)

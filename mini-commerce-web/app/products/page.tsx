@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
+import { useAdmin } from "@/lib/useAdmin";
 
 type Product = {
   id: number;
@@ -18,6 +19,7 @@ type Product = {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const admin = useAdmin();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,12 +139,14 @@ export default function ProductsPage() {
                 >
                   Dashboard
                 </button>
-                <button
-                  onClick={() => router.push("/products/new")}
-                  className="rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
-                >
-                  Novo produto
-                </button>
+                {admin && (
+                  <button
+                    onClick={() => router.push("/products/new")}
+                    className="rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+                  >
+                    Novo produto
+                  </button>
+                )}
                 <button
                   onClick={handleLogout}
                   className="rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-500"
@@ -203,18 +207,24 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    onClick={() => router.push(`/products/${product.id}/edit`)}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
-                  >
-                    Editar
-                  </button>
+                  {admin && (
+                    <>
+                      <button
+                        onClick={() => router.push(`/products/${product.id}/edit`)}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                      >
+                        Editar
+                      </button>
+                    </>
+                  )}
+                {admin && (  
                   <button
                     onClick={() => handleDelete(product.id)}
                     className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
                   >
                     Excluir
                   </button>
+                  )}
                   <button
                     onClick={() => handleBuy(product.id)}
                     disabled={product.stockQuantity <= 0 || !product.isActive}

@@ -4,6 +4,7 @@ using MiniCommerce.Api.Data;
 using MiniCommerce.Api.DTOs;
 using MiniCommerce.Api.Models;
 using Microsoft.AspNetCore.Authorization;
+using MiniCommerce.Api.Services;
 
 namespace MiniCommerce.Api.Controllers;
 
@@ -14,10 +15,12 @@ namespace MiniCommerce.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly OrderService _orderService;
 
-    public OrdersController(AppDbContext context)
+   public OrdersController(AppDbContext context, OrderService orderService)
     {
         _context = context;
+        _orderService = orderService;
     }
 
     [HttpGet]
@@ -49,81 +52,46 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<Order>> Create(CreateOrderDto dto)
+    public async Task<ActionResult<OrderResponseDto>> Create(CreateOrderDto dto)
     {
-        if (dto.Items.Count == 0)
-            return BadRequest("O pedido precisa ter pelo menos um item.");
-
-        var order = new Order();
-
-        foreach (var itemDto in dto.Items)
+        try
         {
-            if (itemDto.Quantity <= 0)
-                return BadRequest("A quantidade deve ser maior que zero.");
+            var order = await _orderService.CreateOrderAsync(dto);
 
-            var product = await _context.Products
-                .FirstOrDefaultAsync(p => p.Id == itemDto.ProductId);
+            var createdOrder = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                .AsNoTracking()
+                .FirstAsync(o => o.Id == order.Id);
 
-            if (product is null)
-                return BadRequest($"Produto {itemDto.ProductId} não encontrado.");
-
-            if (!product.IsActive)
-                return BadRequest($"Produto {product.Name} está inativo.");
-
-            if (product.StockQuantity < itemDto.Quantity)
-                return BadRequest($"Estoque insuficiente para o produto {product.Name}.");
-
-            product.StockQuantity -= itemDto.Quantity;
-
-            var orderItem = new OrderItem
-            {
-                ProductId = product.Id,
-                Quantity = itemDto.Quantity,
-                UnitPrice = product.Price
-            };
-
-            order.Items.Add(orderItem);
-            order.TotalAmount += product.Price * itemDto.Quantity;
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = order.Id },
+                ToResponseDto(createdOrder)
+            );
         }
-
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
-
-        var createdOrder = await _context.Orders
-        .Include(o => o.Items)
-            .ThenInclude(i => i.Product)
-        .AsNoTracking()
-        .FirstAsync(o => o.Id == order.Id);
-
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, ToResponseDto(createdOrder));
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPatch("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id)
     {
-        var order = await _context.Orders
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == id);
-
-        if (order is null)
-            return NotFound("Pedido não encontrado.");
-
-        if (order.Status == OrderStatus.Canceled)
-            return BadRequest("Pedido já está cancelado.");
-
-        foreach (var item in order.Items)
+        try
         {
-            var product = await _context.Products.FindAsync(item.ProductId);
-
-            if (product is not null)
-                product.StockQuantity += item.Quantity;
+            await _orderService.CancelOrderAsync(id);
+            return NoContent();
         }
-
-        order.Status = OrderStatus.Canceled;
-
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     private static OrderResponseDto ToResponseDto(Order order)

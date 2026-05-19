@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { api } from "@/lib/api";
+import { useAdmin } from "@/lib/useAdmin";
 
 type Category = {
   id: number;
@@ -14,6 +15,7 @@ type Category = {
 export default function EditCategoryPage() {
   const router = useRouter();
   const params = useParams();
+  const admin = useAdmin();
 
   const categoryId = Number(params.id);
 
@@ -27,6 +29,10 @@ export default function EditCategoryPage() {
 
     if (!token) {
       router.push("/login");
+      return;
+    }
+
+    if (!admin) {
       return;
     }
 
@@ -61,7 +67,7 @@ export default function EditCategoryPage() {
     }
 
     void fetchCategory();
-  }, [categoryId, router]);
+  }, [admin, categoryId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +118,27 @@ export default function EditCategoryPage() {
       <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
         <div className="mx-auto max-w-xl space-y-8">
           <section className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-[0_30px_90px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            {!admin ? (
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-red-300/80">
+                  Acesso restrito
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold text-white">
+                  Você não pode editar categorias
+                </h1>
+                <p className="mt-2 text-slate-400">
+                  Apenas administradores podem alterar categorias. Entre com uma conta de administrador para acessar esta função.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="mt-6 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                >
+                  Voltar para dashboard
+                </button>
+              </div>
+            ) : (
+              <>
             <div className="mb-6">
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/75">
                 Categorias
@@ -168,6 +195,8 @@ export default function EditCategoryPage() {
                   </button>
                 </div>
               </form>
+            )}
+              </>
             )}
           </section>
         </div>

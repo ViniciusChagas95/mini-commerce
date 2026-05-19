@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { api } from "@/lib/api";
+import { useAdmin } from "@/lib/useAdmin";
 
 type Category = {
   id: number;
@@ -13,6 +14,7 @@ type Category = {
 
 export default function CategoriesPage() {
   const router = useRouter();
+  const admin = useAdmin();
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,12 +54,16 @@ export default function CategoriesPage() {
       return;
     }
 
+    if (!admin) {
+      return;
+    }
+
     async function fetchInitialCategories() {
       await loadCategories();
     }
 
     void fetchInitialCategories();
-  }, [loadCategories, router]);
+  }, [admin, loadCategories, router]);
 
   async function handleDelete(categoryId: number) {
   const confirmed = confirm("Tem certeza que deseja excluir esta categoria?");
@@ -77,14 +83,18 @@ export default function CategoriesPage() {
     let message = "Erro ao excluir categoria.";
 
     if (axios.isAxiosError(error)) {
-      if (typeof error.response?.data === "string") {
-        message = error.response.data;
+      if (error.response?.status === 403) {
+        message = "Você não tem permissão para executar esta ação.";
       }
 
       if (error.response?.status === 401) {
         message = "Sessão expirada. Faça login novamente.";
         localStorage.removeItem("token");
         router.push("/login");
+      }
+
+      if (typeof error.response?.data === "string") {
+        message = error.response.data;
       }
     }
 
@@ -98,6 +108,27 @@ export default function CategoriesPage() {
 
       <main className="min-h-screen bg-slate-950 px-6 py-8 text-white">
         <div className="max-w-6xl mx-auto space-y-8">
+          {!admin ? (
+            <section className="rounded-3xl border border-red-500/20 bg-red-500/10 p-8 text-red-100 shadow-[0_30px_90px_rgba(15,23,42,0.55)]">
+              <p className="text-sm uppercase tracking-[0.3em] text-red-300/80">
+                Acesso restrito
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-white">
+                Você não pode acessar categorias
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-red-100/80">
+                A área de categorias é exclusiva para administradores. Entre com uma conta de administrador para gerenciar categorias.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="mt-6 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+              >
+                Voltar para dashboard
+              </button>
+            </section>
+          ) : (
+            <>
           <section className="rounded-3xl border border-white/10 bg-slate-900/90 p-6 shadow-[0_30px_90px_rgba(15,23,42,0.55)] backdrop-blur-xl">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-3">
@@ -121,12 +152,14 @@ export default function CategoriesPage() {
                 >
                   ← Voltar
                 </button>
+              {admin && (  
                 <button
                   onClick={() => router.push("/categories/new")}
                   className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
                 >
                   + Nova Categoria
                 </button>
+              )}
               </div>
             </div>
 
@@ -187,22 +220,28 @@ export default function CategoriesPage() {
                     Essa categoria aparecerá no catálogo de produtos e ajuda a organizar sua loja.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
+                  {admin && (  
                     <button
                       onClick={() => router.push(`/categories/${category.id}/edit`)}
                       className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
                     >
                       Editar
                     </button>
+                    )}
+                  {admin && (
                     <button
                       onClick={() => handleDelete(category.id)}
                       className="inline-flex items-center justify-center rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500"
                     >
                       Excluir
                     </button>
+                  )}
                   </div>
                 </div>
               ))}
             </div>
+          )}
+            </>
           )}
         </div>
       </main>

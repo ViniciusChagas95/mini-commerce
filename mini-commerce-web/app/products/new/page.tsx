@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Navbar } from "@/components/Navbar";
+import { useAdmin } from "@/lib/useAdmin";
 
 type Category = {
   id: number;
@@ -13,6 +14,7 @@ type Category = {
 
 export default function NewProductPage() {
   const router = useRouter();
+  const admin = useAdmin();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -115,6 +117,27 @@ export default function NewProductPage() {
       <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
         <div className="mx-auto max-w-3xl space-y-8">
           <section className="rounded-3xl border border-white/10 bg-slate-900/90 p-8 shadow-[0_30px_90px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            {!admin ? (
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-red-300/80">
+                  Acesso restrito
+                </p>
+                <h1 className="mt-2 text-3xl font-semibold text-white">
+                  Você não pode criar produtos
+                </h1>
+                <p className="mt-2 text-slate-400">
+                  Apenas administradores podem cadastrar novos produtos. Entre com uma conta de administrador para acessar esta função.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/products")}
+                  className="mt-6 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                >
+                  Voltar para produtos
+                </button>
+              </div>
+            ) : (
+              <>
             <div className="flex items-center justify-between gap-4 mb-6">
               <div>
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/75">Produtos</p>
@@ -211,6 +234,8 @@ export default function NewProductPage() {
                 {submitting ? "Criando..." : "Criar produto"}
               </button>
             </form>
+              </>
+            )}
           </section>
         </div>
       </main>

@@ -25,6 +25,9 @@ MiniCommerce.Api/appsettings.Development.json
 Thumbs.db
 .vs/
 .vscode/
+.tmp/
+**/.build-obj/
+**/.build-output/
 AGENTS.md
 CLAUDE.md
 **/AGENTS.md

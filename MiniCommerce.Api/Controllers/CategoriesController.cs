@@ -8,7 +8,7 @@ namespace MiniCommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class CategoriesController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -20,7 +20,6 @@ public class CategoriesController : ControllerBase
 
 
     [HttpGet]
-    [Authorize]
     public async Task<ActionResult<List<Category>>> GetAll()
     {
         return await _context.Categories
@@ -29,7 +28,6 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize]
     public async Task<ActionResult<Category>> GetById(int id)
     {
         var category = await _context.Categories
@@ -43,7 +41,6 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Category>> Create(Category category)
     {
         if (string.IsNullOrWhiteSpace(category.Name))
@@ -56,7 +53,6 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, Category category)
     {
         var categoryExists = await _context.Categories.AnyAsync(c => c.Id == id);
@@ -73,7 +69,6 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         var category = await _context.Categories.FindAsync(id);
