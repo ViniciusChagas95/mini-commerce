@@ -8,7 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
-
+using MiniCommerce.Api.Services;
 
 namespace MiniCommerce.Api.Controllers;
 
@@ -18,54 +18,31 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _config;
+    private readonly AuthService _authService;
 
-    public AuthController(AppDbContext context, IConfiguration config)
-    {
-        _context = context;
-        _config = config;
-    }
+public AuthController(AppDbContext context, IConfiguration config, AuthService authService)
+{
+    _context = context;
+    _config = config;
+    _authService = authService;
+}
 
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
-        var userExists = await _context.Users
-            .AnyAsync(u => u.Email == dto.Email);
         
-
-        if (userExists)
-            return BadRequest("Email já cadastrado.");
-
-        var user = new User
-        {
-            Name = dto.Name,
-            Email = dto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            Role = dto.Role
-        };
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-
-        return Ok("Usuário criado com sucesso.");
+            await _authService.RegisterAsync(dto);
+            return Ok("Usuário criado com sucesso.");
+       
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == dto.Email);
-
-        if (user is null)
-            return Unauthorized("Credenciais inválidas.");
-
-        var isValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
-
-        if (!isValid)
-            return Unauthorized("Credenciais inválidas.");
-
-        var token = GenerateToken(user);
-
-        return Ok(new { token });
+        
+            var token = await _authService.LoginAsync(dto);
+            return Ok(new { token });
+        
     }
     [HttpGet("me")]
     [Authorize]

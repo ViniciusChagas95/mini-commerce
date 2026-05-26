@@ -3,19 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using MiniCommerce.Api.Data;
 using MiniCommerce.Api.Models;
 using Microsoft.AspNetCore.Authorization;
+using MiniCommerce.Api.Services;
 
 namespace MiniCommerce.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize]
 public class CategoriesController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly CategoryService _categoryService;
 
-    public CategoriesController(AppDbContext context)
+    public CategoriesController(AppDbContext context, CategoryService categoryService)
     {
         _context = context;
+        _categoryService = categoryService;
     }
 
 
@@ -41,50 +44,35 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Category>> Create(Category category)
     {
-        if (string.IsNullOrWhiteSpace(category.Name))
-            return BadRequest("O nome da categoria é obrigatório.");
+      
+            var createdCategory = await _categoryService.CreateCategoryAsync(category);
 
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = createdCategory.Id },
+                createdCategory
+            );
+      
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, Category category)
     {
-        var categoryExists = await _context.Categories.AnyAsync(c => c.Id == id);
-
-        if (!categoryExists)
-            return NotFound("Categoria não encontrada.");
-
-        category.Id = id;
-
-        _context.Categories.Update(category);
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+       
+            await _categoryService.UpdateCategoryAsync(id, category);
+            return NoContent();
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
-
-        if (category is null)
-            return NotFound("Categoria não encontrada.");
-
-        var hasProducts = await _context.Products
-            .AnyAsync(p => p.CategoryId == id);
-
-        if (hasProducts)
-            return BadRequest("Não é possível excluir uma categoria que possui produtos vinculados.");
-
-        _context.Categories.Remove(category);
-        await _context.SaveChangesAsync();
-
-        return NoContent();
+       
+            await _categoryService.DeleteCategoryAsync(id);
+            return NoContent();
     }
 }

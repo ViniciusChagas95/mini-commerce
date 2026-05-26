@@ -56,6 +56,23 @@ public class OrderService
 
         return order;
     }
+    public async Task PayOrderAsync(int orderId)
+{
+    var order = await _context.Orders.FindAsync(orderId);
+
+    if (order is null)
+        throw new KeyNotFoundException("Pedido não encontrado.");
+
+    if (order.Status == OrderStatus.Canceled)
+        throw new InvalidOperationException("Não é possível pagar um pedido cancelado.");
+
+    if (order.Status == OrderStatus.Paid)
+        throw new InvalidOperationException("Pedido já está pago.");
+
+    order.Status = OrderStatus.Paid;
+
+    await _context.SaveChangesAsync();
+}
 
     public async Task CancelOrderAsync(int orderId)
     {
@@ -69,6 +86,8 @@ public class OrderService
         if (order.Status == OrderStatus.Canceled)
             throw new InvalidOperationException("Pedido já está cancelado.");
 
+        if (order.Status == OrderStatus.Paid)
+            throw new InvalidOperationException("Não é possível cancelar um pedido já pago.");
         foreach (var item in order.Items)
         {
             var product = await _context.Products.FindAsync(item.ProductId);

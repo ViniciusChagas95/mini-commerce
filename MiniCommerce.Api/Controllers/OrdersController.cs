@@ -50,12 +50,37 @@ public class OrdersController : ControllerBase
         return ToResponseDto(order);
             
     }
+    
+    [HttpGet("active")]
+    public async Task<ActionResult<List<OrderResponseDto>>> GetActive()
+    {
+        var orders = await _context.Orders
+            .Where(o => o.Status != OrderStatus.Canceled)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return orders.Select(ToResponseDto).ToList();
+    }
+
+    [HttpGet("canceled")]
+    public async Task<ActionResult<List<OrderResponseDto>>> GetCanceled()
+    {
+        var orders = await _context.Orders
+            .Where(o => o.Status == OrderStatus.Canceled)
+            .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return orders.Select(ToResponseDto).ToList();
+    }
 
     [HttpPost]
     public async Task<ActionResult<OrderResponseDto>> Create(CreateOrderDto dto)
     {
-        try
-        {
+        
             var order = await _orderService.CreateOrderAsync(dto);
 
             var createdOrder = await _context.Orders
@@ -69,29 +94,25 @@ public class OrdersController : ControllerBase
                 new { id = order.Id },
                 ToResponseDto(createdOrder)
             );
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+       
+    }
+    
+    [HttpPatch("{id:int}/pay")]
+    public async Task<IActionResult> Pay(int id)
+    {
+        
+            await _orderService.PayOrderAsync(id);
+            return NoContent();
+        
     }
 
     [HttpPatch("{id:int}/cancel")]
     public async Task<IActionResult> Cancel(int id)
     {
-        try
-        {
+        
             await _orderService.CancelOrderAsync(id);
             return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+            
     }
 
     private static OrderResponseDto ToResponseDto(Order order)

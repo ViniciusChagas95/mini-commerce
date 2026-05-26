@@ -4,6 +4,7 @@ using MiniCommerce.Api.Data;
 using MiniCommerce.Api.Models;
 using MiniCommerce.Api.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using MiniCommerce.Api.Services;
 
 namespace MiniCommerce.Api.Controllers;
 
@@ -13,59 +14,31 @@ namespace MiniCommerce.Api.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ProductService _productService;
+    
 
-    public ProductsController(AppDbContext context)
+    public ProductsController(AppDbContext context, ProductService productService)
     {
         _context = context;
+        _productService = productService;
     }
     
-    [HttpGet]
-    [Authorize]
-    public async Task<ActionResult<List<ProductResponseDto>>> GetAll()
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<ProductResponseDto>> Create(CreateProductDto dto)
     {
-        var products = await _context.Products
-            .Where(p => p.IsActive).Where(p => p.StockQuantity > 0)
+        var product = await _productService.CreateProductAsync(dto);
+
+        var createdProduct = await _context.Products
             .Include(p => p.Category)
             .AsNoTracking()
-            .ToListAsync();
+            .FirstAsync(p => p.Id == product.Id);
 
-        return products.Select(ToResponseDto).ToList();
-    }
-    
-    [Authorize(Roles = "Admin")]
-    [HttpPost]
-    public async Task<ActionResult<Product>> Create(CreateProductDto dto)
-    {
-        var categoryExists = await _context.Categories
-            .AnyAsync(c => c.Id == dto.CategoryId);
-
-        if (!categoryExists)
-            return BadRequest("Categoria inválida.");
-
-        if (dto.Price <= 0)
-            return BadRequest("Preço deve ser maior que zero.");
-
-        if (dto.StockQuantity < 0)
-            return BadRequest("Estoque não pode ser negativo.");
-
-        var product = new Product
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            Price = dto.Price,
-            StockQuantity = dto.StockQuantity,
-            CategoryId = dto.CategoryId
-        };
-
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
-
-    var createdProduct = await _context.Products
-        .Include(p => p.Category)
-        .AsNoTracking()
-        .FirstAsync(p => p.Id == product.Id);
-
-    return CreatedAtAction(nameof(GetById), new { id = product.Id }, ToResponseDto(createdProduct));
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = product.Id },
+            ToResponseDto(createdProduct)
+        );
     }
     private static ProductResponseDto ToResponseDto(Product product)
     {
@@ -101,48 +74,34 @@ public class ProductsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(int id, CreateProductDto dto)
     {
-        var product = await _context.Products.FindAsync(id);
 
-        if (product is null)
-            return NotFound("Produto não encontrado.");
-
-        var categoryExists = await _context.Categories
-            .AnyAsync(c => c.Id == dto.CategoryId);
-
-        if (!categoryExists)
-            return BadRequest("Categoria inválida.");
-
-        if (dto.Price <= 0)
-            return BadRequest("Preço deve ser maior que zero.");
-
-        if (dto.StockQuantity < 0)
-            return BadRequest("Estoque não pode ser negativo.");
-
-        product.Name = dto.Name;
-        product.Description = dto.Description;
-        product.Price = dto.Price;
-        product.StockQuantity = dto.StockQuantity;
-        product.CategoryId = dto.CategoryId;
-
-        await _context.SaveChangesAsync();
-
+        await _productService.UpdateProductAsync(id, dto);
         return NoContent();
+     
     }
 
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
-        var product = await _context.Products.FindAsync(id);
-
-        if (product is null)
-            return NotFound("Produto não encontrado.");
-
-        product.IsActive = false;
-
-        await _context.SaveChangesAsync();
-
+        
+        await _productService.DeleteProductAsync(id);
         return NoContent();
+    }
+
+
+
+    [HttpGet]
+    [Authorize]
+    public async Task<ActionResult<List<ProductResponseDto>>> GetAll()
+    {
+        var products = await _context.Products
+            .Where(p => p.IsActive)
+            .Include(p => p.Category)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return products.Select(ToResponseDto).ToList();
     }
 
     
